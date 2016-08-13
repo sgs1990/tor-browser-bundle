@@ -1,0 +1,1283 @@
+From baef69058c64651cd6d5a3d81cce6a9fa5b5c937 Mon Sep 17 00:00:00 2001
+From: Arlo Breault <arlolra@gmail.com>
+Date: Fri, 1 Jul 2016 19:07:47 -0700
+Subject: [PATCH] With a rat fur
+
+---
+ webrtc/api/api.gyp                      | 365 +++++++++++++++++++++-----------
+ webrtc/api/mediacontroller.cc           |   6 +
+ webrtc/api/peerconnection.cc            |  58 ++++-
+ webrtc/api/peerconnection.h             |  14 +-
+ webrtc/api/peerconnectionfactory.cc     |  20 +-
+ webrtc/api/peerconnectionfactory.h      |  11 +-
+ webrtc/api/peerconnectionfactoryproxy.h |   6 +
+ webrtc/api/peerconnectioninterface.h    |   8 +
+ webrtc/api/peerconnectionproxy.h        |   6 +
+ webrtc/api/statscollector.cc            |   4 +
+ webrtc/build/common.gypi                |   1 +
+ webrtc/call.h                           |   4 +
+ webrtc/call/call.cc                     |  39 ++++
+ webrtc/call/webrtc_call.gypi            |   8 +-
+ webrtc/media/media.gyp                  |  73 ++++++-
+ webrtc/pc/channelmanager.cc             |   6 +
+ webrtc/pc/mediasession.cc               |   2 +
+ webrtc/pc/pc.gyp                        |   2 +-
+ webrtc/webrtc.gyp                       |   2 +-
+ 19 files changed, 488 insertions(+), 147 deletions(-)
+
+diff --git a/webrtc/api/api.gyp b/webrtc/api/api.gyp
+index 377ef8f..2483600 100644
+--- a/webrtc/api/api.gyp
++++ b/webrtc/api/api.gyp
+@@ -121,138 +121,253 @@
+         }, # libjingle_peerconnection_java
+       ]
+     }],
+-  ],  # conditions
+-  'targets': [
+-    {
+-      'target_name': 'libjingle_peerconnection',
+-      'type': 'static_library',
+-      'dependencies': [
+-        '<(webrtc_root)/media/media.gyp:rtc_media',
+-        '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+-      ],
+-      'sources': [
+-        'audiotrack.cc',
+-        'audiotrack.h',
+-        'datachannel.cc',
+-        'datachannel.h',
+-        'datachannelinterface.h',
+-        'dtlsidentitystore.cc',
+-        'dtlsidentitystore.h',
+-        'dtmfsender.cc',
+-        'dtmfsender.h',
+-        'dtmfsenderinterface.h',
+-        'jsep.h',
+-        'jsepicecandidate.cc',
+-        'jsepicecandidate.h',
+-        'jsepsessiondescription.cc',
+-        'jsepsessiondescription.h',
+-        'localaudiosource.cc',
+-        'localaudiosource.h',
+-        'mediaconstraintsinterface.cc',
+-        'mediaconstraintsinterface.h',
+-        'mediacontroller.cc',
+-        'mediacontroller.h',
+-        'mediastream.cc',
+-        'mediastream.h',
+-        'mediastreaminterface.h',
+-        'mediastreamobserver.cc',
+-        'mediastreamobserver.h',
+-        'mediastreamprovider.h',
+-        'mediastreamproxy.h',
+-        'mediastreamtrack.h',
+-        'mediastreamtrackproxy.h',
+-        'notifier.h',
+-        'peerconnection.cc',
+-        'peerconnection.h',
+-        'peerconnectionfactory.cc',
+-        'peerconnectionfactory.h',
+-        'peerconnectionfactoryproxy.h',
+-        'peerconnectioninterface.h',
+-        'peerconnectionproxy.h',
+-        'proxy.h',
+-        'remoteaudiosource.cc',
+-        'remoteaudiosource.h',
+-        'rtpparameters.h',
+-        'rtpreceiver.cc',
+-        'rtpreceiver.h',
+-        'rtpreceiverinterface.h',
+-        'rtpsender.cc',
+-        'rtpsender.h',
+-        'rtpsenderinterface.h',
+-        'sctputils.cc',
+-        'sctputils.h',
+-        'statscollector.cc',
+-        'statscollector.h',
+-        'statstypes.cc',
+-        'statstypes.h',
+-        'streamcollection.h',
+-        'videocapturertracksource.cc',
+-        'videocapturertracksource.h',
+-        'videosourceproxy.h',
+-        'videotrack.cc',
+-        'videotrack.h',
+-        'videotracksource.cc',
+-        'videotracksource.h',
+-        'webrtcsdp.cc',
+-        'webrtcsdp.h',
+-        'webrtcsession.cc',
+-        'webrtcsession.h',
+-        'webrtcsessiondescriptionfactory.cc',
+-        'webrtcsessiondescriptionfactory.h',
+-      ],
+-      # TODO(kjellander): Make the code compile without disabling these flags.
+-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
+-      'cflags': [
+-        '-Wno-sign-compare',
+-      ],
+-      'cflags_cc!': [
+-        '-Woverloaded-virtual',
+-      ],
+-      'conditions': [
+-        ['clang==1', {
+-          'cflags!': [
+-            '-Wextra',
++    ['build_have_not == 1', {
++      'targets': [
++        {
++          'target_name': 'libjingle_peerconnection',
++          'type': 'static_library',
++          'dependencies': [
++            '<(webrtc_root)/media/media.gyp:rtc_media',
++            '<(webrtc_root)/pc/pc.gyp:rtc_pc',
+           ],
+-          'xcode_settings': {
+-            'WARNING_CFLAGS!': ['-Wextra'],
+-          },
+-        }, {
++          'sources': [
++            'audiotrack.cc',
++            'audiotrack.h',
++            'datachannel.cc',
++            'datachannel.h',
++            'datachannelinterface.h',
++            'dtlsidentitystore.cc',
++            'dtlsidentitystore.h',
++            'dtmfsender.cc',
++            'dtmfsender.h',
++            'dtmfsenderinterface.h',
++            'jsep.h',
++            'jsepicecandidate.cc',
++            'jsepicecandidate.h',
++            'jsepsessiondescription.cc',
++            'jsepsessiondescription.h',
++            'localaudiosource.cc',
++            'localaudiosource.h',
++            'mediaconstraintsinterface.cc',
++            'mediaconstraintsinterface.h',
++            'mediacontroller.cc',
++            'mediacontroller.h',
++            'mediastream.cc',
++            'mediastream.h',
++            'mediastreaminterface.h',
++            'mediastreamobserver.cc',
++            'mediastreamobserver.h',
++            'mediastreamprovider.h',
++            'mediastreamproxy.h',
++            'mediastreamtrack.h',
++            'mediastreamtrackproxy.h',
++            'notifier.h',
++            'peerconnection.cc',
++            'peerconnection.h',
++            'peerconnectionfactory.cc',
++            'peerconnectionfactory.h',
++            'peerconnectionfactoryproxy.h',
++            'peerconnectioninterface.h',
++            'peerconnectionproxy.h',
++            'proxy.h',
++            'remoteaudiosource.cc',
++            'remoteaudiosource.h',
++            'rtpparameters.h',
++            'rtpreceiver.cc',
++            'rtpreceiver.h',
++            'rtpreceiverinterface.h',
++            'rtpsender.cc',
++            'rtpsender.h',
++            'rtpsenderinterface.h',
++            'sctputils.cc',
++            'sctputils.h',
++            'statscollector.cc',
++            'statscollector.h',
++            'statstypes.cc',
++            'statstypes.h',
++            'streamcollection.h',
++            'videocapturertracksource.cc',
++            'videocapturertracksource.h',
++            'videosourceproxy.h',
++            'videotrack.cc',
++            'videotrack.h',
++            'videotracksource.cc',
++            'videotracksource.h',
++            'webrtcsdp.cc',
++            'webrtcsdp.h',
++            'webrtcsession.cc',
++            'webrtcsession.h',
++            'webrtcsessiondescriptionfactory.cc',
++            'webrtcsessiondescriptionfactory.h',
++          ],
++          # TODO(kjellander): Make the code compile without disabling these flags.
++          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
+           'cflags': [
+-            '-Wno-maybe-uninitialized',  # Only exists for GCC.
++            '-Wno-sign-compare',
+           ],
+-        }],
+-        ['OS=="win"', {
+-          # Disable warning for signed/unsigned mismatch.
+-          'msvs_settings': {
+-            'VCCLCompilerTool': {
+-              'AdditionalOptions!': ['/we4389'],
+-            },
+-          },
+-        }],
+-        ['OS=="win" and clang==1', {
+-          'msvs_settings': {
+-            'VCCLCompilerTool': {
+-              'AdditionalOptions': [
+-                '-Wno-sign-compare',
++          'cflags_cc!': [
++            '-Woverloaded-virtual',
++          ],
++          'conditions': [
++            ['clang==1', {
++              'cflags!': [
++                '-Wextra',
+               ],
+-            },
+-          },
+-        }],
+-        ['use_quic==1', {
++              'xcode_settings': {
++                'WARNING_CFLAGS!': ['-Wextra'],
++              },
++            }, {
++              'cflags': [
++                '-Wno-maybe-uninitialized',  # Only exists for GCC.
++              ],
++            }],
++            ['OS=="win"', {
++              # Disable warning for signed/unsigned mismatch.
++              'msvs_settings': {
++                'VCCLCompilerTool': {
++                  'AdditionalOptions!': ['/we4389'],
++                },
++              },
++            }],
++            ['OS=="win" and clang==1', {
++              'msvs_settings': {
++                'VCCLCompilerTool': {
++                  'AdditionalOptions': [
++                    '-Wno-sign-compare',
++                  ],
++                },
++              },
++            }],
++            ['use_quic==1', {
++              'dependencies': [
++                '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
++              ],
++              'sources': [
++                'quicdatachannel.cc',
++                'quicdatachannel.h',
++                'quicdatatransport.cc',
++                'quicdatatransport.h',
++              ],
++              'export_dependent_settings': [
++                '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
++              ],
++            }],
++          ],
++        },  # target libjingle_peerconnection
++      ],  # targets
++    }],
++    ['build_have_not == 0', {
++      'targets': [
++        {
++          'target_name': 'libjingle_peerconnection_not',
++          'type': 'static_library',
+           'dependencies': [
+-            '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
++            '<(webrtc_root)/media/media.gyp:rtc_media_not',
++            '<(webrtc_root)/pc/pc.gyp:rtc_pc',
++            '<(webrtc_root)/system_wrappers/system_wrappers.gyp:field_trial_default',
+           ],
+           'sources': [
+-            'quicdatachannel.cc',
+-            'quicdatachannel.h',
+-            'quicdatatransport.cc',
+-            'quicdatatransport.h',
++            'datachannel.cc',
++            'datachannel.h',
++            'datachannelinterface.h',
++            'dtlsidentitystore.cc',
++            'dtlsidentitystore.h',
++            'dtmfsender.cc',
++            'dtmfsender.h',
++            'dtmfsenderinterface.h',
++            'jsep.h',
++            'jsepicecandidate.cc',
++            'jsepicecandidate.h',
++            'jsepsessiondescription.cc',
++            'jsepsessiondescription.h',
++            'mediaconstraintsinterface.cc',
++            'mediaconstraintsinterface.h',
++            'mediacontroller.cc',
++            'mediacontroller.h',
++            'mediastreamobserver.h',
++            'notifier.h',
++            'peerconnection.cc',
++            'peerconnection.h',
++            'peerconnectionfactory.cc',
++            'peerconnectionfactory.h',
++            'peerconnectionfactoryproxy.h',
++            'peerconnectioninterface.h',
++            'peerconnectionproxy.h',
++            'proxy.h',
++            'rtpparameters.h',
++            'rtpreceiver.h',
++            'rtpreceiverinterface.h',
++            'rtpsender.h',
++            'rtpsenderinterface.h',
++            'sctputils.cc',
++            'sctputils.h',
++            'statscollector.cc',
++            'statscollector.h',
++            'statstypes.cc',
++            'statstypes.h',
++            'streamcollection.h',
++            'webrtcsdp.cc',
++            'webrtcsdp.h',
++            'webrtcsession.cc',
++            'webrtcsession.h',
++            'webrtcsessiondescriptionfactory.cc',
++            'webrtcsessiondescriptionfactory.h',
+           ],
+-          'export_dependent_settings': [
+-            '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
++          # TODO(kjellander): Make the code compile without disabling these flags.
++          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
++          'cflags': [
++            '-Wno-sign-compare',
+           ],
+-        }],
+-      ],
+-    },  # target libjingle_peerconnection
+-  ],  # targets
++          'cflags_cc!': [
++            '-Woverloaded-virtual',
++          ],
++          'conditions': [
++            ['clang==1', {
++              'cflags!': [
++                '-Wextra',
++              ],
++              'xcode_settings': {
++                'WARNING_CFLAGS!': ['-Wextra'],
++              },
++            }, {
++              'cflags': [
++                '-Wno-maybe-uninitialized',  # Only exists for GCC.
++              ],
++            }],
++            ['OS=="win"', {
++              # Disable warning for signed/unsigned mismatch.
++              'msvs_settings': {
++                'VCCLCompilerTool': {
++                  'AdditionalOptions!': ['/we4389'],
++                },
++              },
++            }],
++            ['OS=="win" and clang==1', {
++              'msvs_settings': {
++                'VCCLCompilerTool': {
++                  'AdditionalOptions': [
++                    '-Wno-sign-compare',
++                  ],
++                },
++              },
++            }],
++            ['use_quic==1', {
++              'dependencies': [
++                '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
++              ],
++              'sources': [
++                'quicdatachannel.cc',
++                'quicdatachannel.h',
++                'quicdatatransport.cc',
++                'quicdatatransport.h',
++              ],
++              'export_dependent_settings': [
++                '<(DEPTH)/third_party/libquic/libquic.gyp:libquic',
++              ],
++            }],
++          ],
++        },  # target libjingle_peerconnection_not
++      ],  # targets
++    }],
++  ],  # conditions
+ }
+diff --git a/webrtc/api/mediacontroller.cc b/webrtc/api/mediacontroller.cc
+index 2e4501b..651e769 100644
+--- a/webrtc/api/mediacontroller.cc
++++ b/webrtc/api/mediacontroller.cc
+@@ -35,9 +35,15 @@ class MediaController : public webrtc::MediaControllerInterface,
+         media_config_(media_config),
+         channel_manager_(channel_manager) {
+     RTC_DCHECK(worker_thread);
++
++    #ifdef HAVE_NOT
++
+     worker_thread_->Invoke<void>(
+         rtc::Bind(&MediaController::Construct_w, this,
+                   channel_manager_->media_engine()));
++
++    #endif  // HAVE_NOT
++
+   }
+   ~MediaController() override {
+     Close();
+diff --git a/webrtc/api/peerconnection.cc b/webrtc/api/peerconnection.cc
+index dda0eeb..04c6be5 100644
+--- a/webrtc/api/peerconnection.cc
++++ b/webrtc/api/peerconnection.cc
+@@ -49,10 +49,14 @@ using webrtc::PeerConnectionInterface;
+ using webrtc::RtpSenderInterface;
+ using webrtc::StreamCollection;
+ 
++#ifdef HAVE_NOT
++
+ static const char kDefaultStreamLabel[] = "default";
+ static const char kDefaultAudioTrackLabel[] = "defaulta0";
+ static const char kDefaultVideoTrackLabel[] = "defaultv0";
+ 
++#endif  // HAVE_NOT
++
+ // The min number of tokens must present in Turn host uri.
+ // e.g. user@turn.example.org
+ static const size_t kTurnHostTokensNum = 2;
+@@ -313,6 +317,8 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
+   return true;
+ }
+ 
++#ifdef HAVE_NOT
++
+ // Check if we can send |new_stream| on a PeerConnection.
+ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
+                             webrtc::MediaStreamInterface* new_stream) {
+@@ -327,6 +333,8 @@ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
+   return true;
+ }
+ 
++#endif  // HAVE_NOT
++
+ bool MediaContentDirectionHasSend(cricket::MediaContentDirection dir) {
+   return dir == cricket::MD_SENDONLY || dir == cricket::MD_SENDRECV;
+ }
+@@ -626,6 +634,8 @@ PeerConnection::remote_streams() {
+   return remote_streams_;
+ }
+ 
++#ifdef HAVE_NOT
++
+ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
+   TRACE_EVENT0("webrtc", "PeerConnection::AddStream");
+   if (IsClosed()) {
+@@ -801,6 +811,8 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
+   return new_sender;
+ }
+ 
++#endif  // HAVE_NOT
++
+ std::vector<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::GetSenders()
+     const {
+   return senders_;
+@@ -1010,6 +1022,8 @@ void PeerConnection::SetLocalDescription(
+     AllocateSctpSids(role);
+   }
+ 
++  #ifdef HAVE_NOT
++
+   // Update state and SSRC of local MediaStreams and DataChannels based on the
+   // local session description.
+   const cricket::ContentInfo* audio_content =
+@@ -1038,6 +1052,8 @@ void PeerConnection::SetLocalDescription(
+     }
+   }
+ 
++  #endif  // HAVE_NOT
++
+   const cricket::ContentInfo* data_content =
+       GetFirstDataContent(desc->description());
+   if (data_content) {
+@@ -1089,14 +1105,26 @@ void PeerConnection::SetRemoteDescription(
+   }
+ 
+   const cricket::SessionDescription* remote_desc = desc->description();
++
++  const cricket::DataContentDescription* data_desc =
++      GetFirstDataContentDescription(remote_desc);
++
++  // Update the DataChannels with the information from the remote peer.
++  if (data_desc) {
++    if (rtc::starts_with(data_desc->protocol().data(),
++                         cricket::kMediaProtocolRtpPrefix)) {
++      UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
++    }
++  }
++
++  #ifdef HAVE_NOT
++
+   const cricket::ContentInfo* audio_content = GetFirstAudioContent(remote_desc);
+   const cricket::ContentInfo* video_content = GetFirstVideoContent(remote_desc);
+   const cricket::AudioContentDescription* audio_desc =
+       GetFirstAudioContentDescription(remote_desc);
+   const cricket::VideoContentDescription* video_desc =
+       GetFirstVideoContentDescription(remote_desc);
+-  const cricket::DataContentDescription* data_desc =
+-      GetFirstDataContentDescription(remote_desc);
+ 
+   // Check if the descriptions include streams, just in case the peer supports
+   // MSID, but doesn't indicate so with "a=msid-semantic".
+@@ -1140,14 +1168,6 @@ void PeerConnection::SetRemoteDescription(
+     }
+   }
+ 
+-  // Update the DataChannels with the information from the remote peer.
+-  if (data_desc) {
+-    if (rtc::starts_with(data_desc->protocol().data(),
+-                         cricket::kMediaProtocolRtpPrefix)) {
+-      UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
+-    }
+-  }
+-
+   // Iterate new_streams and notify the observer about new MediaStreams.
+   for (size_t i = 0; i < new_streams->count(); ++i) {
+     MediaStreamInterface* new_stream = new_streams->at(i);
+@@ -1155,6 +1175,8 @@ void PeerConnection::SetRemoteDescription(
+     observer_->OnAddStream(new_stream);
+   }
+ 
++  #endif  // HAVE_NOT
++
+   UpdateEndedRemoteMediaStreams();
+ 
+   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
+@@ -1297,6 +1319,8 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
+   }
+ }
+ 
++#ifdef HAVE_NOT
++
+ void PeerConnection::CreateAudioReceiver(MediaStreamInterface* stream,
+                                          const std::string& track_id,
+                                          uint32_t ssrc) {
+@@ -1314,6 +1338,8 @@ void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
+                            session_.get())));
+ }
+ 
++#endif  // HAVE_NOT
++
+ // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
+ // description.
+ void PeerConnection::DestroyReceiver(const std::string& track_id) {
+@@ -1392,6 +1418,8 @@ void PeerConnection::ChangeSignalingState(
+   observer_->OnSignalingChange(signaling_state_);
+ }
+ 
++#ifdef HAVE_NOT
++
+ void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
+                                        MediaStreamInterface* stream) {
+   auto sender = FindSenderForTrack(track);
+@@ -1468,6 +1496,8 @@ void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
+   senders_.erase(sender);
+ }
+ 
++#endif  // HAVE_NOT
++
+ void PeerConnection::PostSetSessionDescriptionFailure(
+     SetSessionDescriptionObserver* observer,
+     const std::string& error) {
+@@ -1580,6 +1610,8 @@ bool PeerConnection::GetOptionsForAnswer(
+   return true;
+ }
+ 
++#ifdef HAVE_NOT
++
+ void PeerConnection::RemoveTracks(cricket::MediaType media_type) {
+   UpdateLocalTracks(std::vector<cricket::StreamParams>(), media_type);
+   UpdateRemoteStreamsList(std::vector<cricket::StreamParams>(), false,
+@@ -1706,6 +1738,8 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
+   }
+ }
+ 
++#endif  // HAVE_NOT
++
+ void PeerConnection::UpdateEndedRemoteMediaStreams() {
+   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams_to_remove;
+   for (size_t i = 0; i < remote_streams_->count(); ++i) {
+@@ -1721,6 +1755,8 @@ void PeerConnection::UpdateEndedRemoteMediaStreams() {
+   }
+ }
+ 
++#ifdef HAVE_NOT
++
+ void PeerConnection::UpdateLocalTracks(
+     const std::vector<cricket::StreamParams>& streams,
+     cricket::MediaType media_type) {
+@@ -1759,6 +1795,8 @@ void PeerConnection::UpdateLocalTracks(
+   }
+ }
+ 
++#endif  // HAVE_NOT
++
+ void PeerConnection::OnLocalTrackSeen(const std::string& stream_label,
+                                       const std::string& track_id,
+                                       uint32_t ssrc,
+diff --git a/webrtc/api/peerconnection.h b/webrtc/api/peerconnection.h
+index 8ba7e58..99a695a 100644
+--- a/webrtc/api/peerconnection.h
++++ b/webrtc/api/peerconnection.h
+@@ -75,15 +75,19 @@ class PeerConnection : public PeerConnectionInterface,
+ 
+   rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
+   rtc::scoped_refptr<StreamCollectionInterface> remote_streams() override;
++
++  virtual WebRtcSession* session() { return session_.get(); }
++
++  #ifdef HAVE_NOT
++
+   bool AddStream(MediaStreamInterface* local_stream) override;
+   void RemoveStream(MediaStreamInterface* local_stream) override;
+ 
+   rtc::scoped_refptr<RtpSenderInterface> AddTrack(
+       MediaStreamTrackInterface* track,
+       std::vector<MediaStreamInterface*> streams) override;
+-  bool RemoveTrack(RtpSenderInterface* sender) override;
+ 
+-  virtual WebRtcSession* session() { return session_.get(); }
++  bool RemoveTrack(RtpSenderInterface* sender) override;
+ 
+   rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
+       AudioTrackInterface* track) override;
+@@ -92,6 +96,8 @@ class PeerConnection : public PeerConnectionInterface,
+       const std::string& kind,
+       const std::string& stream_id) override;
+ 
++  #endif  // HAVE_NOT
++
+   std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
+       const override;
+   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
+@@ -195,6 +201,8 @@ class PeerConnection : public PeerConnectionInterface,
+   void OnSessionStateChange(WebRtcSession* session, WebRtcSession::State state);
+   void ChangeSignalingState(SignalingState signaling_state);
+ 
++  #ifdef HAVE_NOT
++
+   // Signals from MediaStreamObserver.
+   void OnAudioTrackAdded(AudioTrackInterface* track,
+                          MediaStreamInterface* stream);
+@@ -205,6 +213,8 @@ class PeerConnection : public PeerConnectionInterface,
+   void OnVideoTrackRemoved(VideoTrackInterface* track,
+                            MediaStreamInterface* stream);
+ 
++  #endif  // HAVE_NOT
++
+   rtc::Thread* signaling_thread() const {
+     return factory_->signaling_thread();
+   }
+diff --git a/webrtc/api/peerconnectionfactory.cc b/webrtc/api/peerconnectionfactory.cc
+index 9cb5b46..60b4bde 100644
+--- a/webrtc/api/peerconnectionfactory.cc
++++ b/webrtc/api/peerconnectionfactory.cc
+@@ -170,12 +170,18 @@ bool PeerConnectionFactory::Initialize() {
+     return false;
+   }
+ 
++  cricket::MediaEngineInterface* media_engine = nullptr;
++
++  #ifdef HAVE_NOT
++
+   // TODO:  Need to make sure only one VoE is created inside
+   // WebRtcMediaEngine.
+-  cricket::MediaEngineInterface* media_engine =
++  media_engine =
+       worker_thread_->Invoke<cricket::MediaEngineInterface*>(rtc::Bind(
+       &PeerConnectionFactory::CreateMediaEngine_w, this));
+ 
++  #endif  // HAVE_NOT
++
+   channel_manager_.reset(new cricket::ChannelManager(
+       media_engine, worker_thread_, network_thread_));
+ 
+@@ -190,6 +196,8 @@ bool PeerConnectionFactory::Initialize() {
+   return true;
+ }
+ 
++#ifdef HAVE_NOT
++
+ rtc::scoped_refptr<AudioSourceInterface>
+ PeerConnectionFactory::CreateAudioSource(
+     const MediaConstraintsInterface* constraints) {
+@@ -228,6 +236,8 @@ PeerConnectionFactory::CreateVideoSource(cricket::VideoCapturer* capturer) {
+                                        source);
+ }
+ 
++#endif  // HAVE_NOT
++
+ bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,
+                                          int64_t max_size_bytes) {
+   RTC_DCHECK(signaling_thread_->IsCurrent());
+@@ -301,6 +311,8 @@ PeerConnectionFactory::CreatePeerConnection(
+   return PeerConnectionProxy::Create(signaling_thread(), pc);
+ }
+ 
++#ifdef HAVE_NOT
++
+ rtc::scoped_refptr<MediaStreamInterface>
+ PeerConnectionFactory::CreateLocalMediaStream(const std::string& label) {
+   RTC_DCHECK(signaling_thread_->IsCurrent());
+@@ -325,6 +337,8 @@ PeerConnectionFactory::CreateAudioTrack(const std::string& id,
+   return AudioTrackProxy::Create(signaling_thread_, track);
+ }
+ 
++#endif  // HAVE_NOT
++
+ webrtc::MediaControllerInterface* PeerConnectionFactory::CreateMediaController(
+     const cricket::MediaConfig& config) const {
+   RTC_DCHECK(signaling_thread_->IsCurrent());
+@@ -347,6 +361,8 @@ rtc::Thread* PeerConnectionFactory::network_thread() {
+   return network_thread_;
+ }
+ 
++#ifdef HAVE_NOT
++
+ cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
+   ASSERT(worker_thread_ == rtc::Thread::Current());
+   return cricket::WebRtcMediaEngineFactory::Create(
+@@ -354,4 +370,6 @@ cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
+       video_decoder_factory_.get());
+ }
+ 
++#endif  // HAVE_NOT
++
+ }  // namespace webrtc
+diff --git a/webrtc/api/peerconnectionfactory.h b/webrtc/api/peerconnectionfactory.h
+index 21165cf..26fb972 100644
+--- a/webrtc/api/peerconnectionfactory.h
++++ b/webrtc/api/peerconnectionfactory.h
+@@ -54,6 +54,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
+ 
+   bool Initialize();
+ 
++  #ifdef HAVE_NOT
++
+   rtc::scoped_refptr<MediaStreamInterface>
+       CreateLocalMediaStream(const std::string& label) override;
+ 
+@@ -81,6 +83,11 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
+       CreateAudioTrack(const std::string& id,
+                        AudioSourceInterface* audio_source) override;
+ 
++  #endif  // HAVE_NOT
++
++  virtual webrtc::MediaControllerInterface* CreateMediaController(
++      const cricket::MediaConfig& config) const;
++
+   bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
+   void StopAecDump() override;
+   bool StartRtcEventLog(rtc::PlatformFile file) override {
+@@ -90,8 +97,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
+                         int64_t max_size_bytes) override;
+   void StopRtcEventLog() override;
+ 
+-  virtual webrtc::MediaControllerInterface* CreateMediaController(
+-      const cricket::MediaConfig& config) const;
+   virtual rtc::Thread* signaling_thread();
+   virtual rtc::Thread* worker_thread();
+   virtual rtc::Thread* network_thread();
+@@ -109,7 +114,9 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
+   virtual ~PeerConnectionFactory();
+ 
+  private:
++  #ifdef HAVE_NOT
+   cricket::MediaEngineInterface* CreateMediaEngine_w();
++  #endif  // HAVE_NOT
+ 
+   bool owns_ptrs_;
+   bool wraps_current_thread_;
+diff --git a/webrtc/api/peerconnectionfactoryproxy.h b/webrtc/api/peerconnectionfactoryproxy.h
+index c357de9..0a75d1f 100644
+--- a/webrtc/api/peerconnectionfactoryproxy.h
++++ b/webrtc/api/peerconnectionfactoryproxy.h
+@@ -46,6 +46,9 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
+             rtc::Bind(&PeerConnectionFactoryProxy::CreatePeerConnection_ot,
+                       this, a1, a3.release(), a4.release(), a5));
+   }
++
++  #ifdef HAVE_NOT
++
+   PROXY_METHOD1(rtc::scoped_refptr<MediaStreamInterface>,
+                 CreateLocalMediaStream, const std::string&)
+   PROXY_METHOD1(rtc::scoped_refptr<AudioSourceInterface>,
+@@ -66,6 +69,9 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
+                 VideoTrackSourceInterface*)
+   PROXY_METHOD2(rtc::scoped_refptr<AudioTrackInterface>,
+                 CreateAudioTrack, const std::string&,  AudioSourceInterface*)
++
++  #endif  // HAVE_NOT
++
+   PROXY_METHOD2(bool, StartAecDump, rtc::PlatformFile, int64_t)
+   PROXY_METHOD0(void, StopAecDump)
+   PROXY_METHOD1(bool, StartRtcEventLog, rtc::PlatformFile)
+diff --git a/webrtc/api/peerconnectioninterface.h b/webrtc/api/peerconnectioninterface.h
+index 4fa9bf2..26055d4 100644
+--- a/webrtc/api/peerconnectioninterface.h
++++ b/webrtc/api/peerconnectioninterface.h
+@@ -344,6 +344,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
+   virtual rtc::scoped_refptr<StreamCollectionInterface>
+       remote_streams() = 0;
+ 
++  #ifdef HAVE_NOT
++
+   // Add a new MediaStream to be sent on this PeerConnection.
+   // Note that a SessionDescription negotiation is needed before the
+   // remote peer can receive the stream.
+@@ -386,6 +388,8 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
+     return rtc::scoped_refptr<RtpSenderInterface>();
+   }
+ 
++  #endif  // HAVE_NOT
++
+   virtual std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
+       const {
+     return std::vector<rtc::scoped_refptr<RtpSenderInterface>>();
+@@ -589,6 +593,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
+       std::unique_ptr<DtlsIdentityStoreInterface> dtls_identity_store,
+       PeerConnectionObserver* observer) = 0;
+ 
++  #ifdef HAVE_NOT
++
+   virtual rtc::scoped_refptr<MediaStreamInterface>
+       CreateLocalMediaStream(const std::string& label) = 0;
+ 
+@@ -623,6 +629,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
+       CreateAudioTrack(const std::string& label,
+                        AudioSourceInterface* source) = 0;
+ 
++  #endif  // HAVE_NOT
++
+   // Starts AEC dump using existing file. Takes ownership of |file| and passes
+   // it on to VoiceEngine (via other objects) immediately, which will take
+   // the ownerhip. If the operation fails, the file will be closed.
+diff --git a/webrtc/api/peerconnectionproxy.h b/webrtc/api/peerconnectionproxy.h
+index d35d5ba..eb74042 100644
+--- a/webrtc/api/peerconnectionproxy.h
++++ b/webrtc/api/peerconnectionproxy.h
+@@ -22,6 +22,9 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
+                 local_streams)
+   PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>,
+                 remote_streams)
++
++  #ifdef HAVE_NOT
++
+   PROXY_METHOD1(bool, AddStream, MediaStreamInterface*)
+   PROXY_METHOD1(void, RemoveStream, MediaStreamInterface*)
+   PROXY_METHOD2(rtc::scoped_refptr<RtpSenderInterface>,
+@@ -35,6 +38,9 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
+                 CreateSender,
+                 const std::string&,
+                 const std::string&)
++
++  #endif  // HAVE_NOT
++
+   PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<RtpSenderInterface>>,
+                      GetSenders)
+   PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<RtpReceiverInterface>>,
+diff --git a/webrtc/api/statscollector.cc b/webrtc/api/statscollector.cc
+index df1d0aa..ec69b8f 100644
+--- a/webrtc/api/statscollector.cc
++++ b/webrtc/api/statscollector.cc
+@@ -847,6 +847,8 @@ void StatsCollector::ExtractVideoInfo(
+ void StatsCollector::ExtractSenderInfo() {
+   RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());
+ 
++  #ifdef HAVE_NOT
++
+   for (const auto& sender : pc_->GetSenders()) {
+     // TODO(nisse): SSRC == 0 currently means none. Delete check when
+     // that is fixed.
+@@ -875,6 +877,8 @@ void StatsCollector::ExtractSenderInfo() {
+     report->AddInt(StatsReport::kStatsValueNameFrameHeightInput,
+                    stats.input_height);
+   }
++
++  #endif  // HAVE_NOT
+ }
+ 
+ void StatsCollector::ExtractDataInfo() {
+diff --git a/webrtc/build/common.gypi b/webrtc/build/common.gypi
+index 26acf4b..57c02eb 100644
+--- a/webrtc/build/common.gypi
++++ b/webrtc/build/common.gypi
+@@ -69,6 +69,7 @@
+     },
+     'build_with_chromium%': '<(build_with_chromium)',
+     'build_with_mozilla%': '<(build_with_mozilla)',
++    'build_have_not%': 0,
+     'build_libevent%': '<(build_libevent)',
+     'enable_libevent%': '<(enable_libevent)',
+     'webrtc_root%': '<(webrtc_root)',
+diff --git a/webrtc/call.h b/webrtc/call.h
+index 80134fa..7cbe6ba 100644
+--- a/webrtc/call.h
++++ b/webrtc/call.h
+@@ -99,6 +99,8 @@ class Call {
+ 
+   static Call* Create(const Call::Config& config);
+ 
++  #ifdef HAVE_NOT
++
+   virtual AudioSendStream* CreateAudioSendStream(
+       const AudioSendStream::Config& config) = 0;
+   virtual void DestroyAudioSendStream(AudioSendStream* send_stream) = 0;
+@@ -118,6 +120,8 @@ class Call {
+   virtual void DestroyVideoReceiveStream(
+       VideoReceiveStream* receive_stream) = 0;
+ 
++  #endif  // HAVE_NOT
++
+   // All received RTP and RTCP packets for the call should be inserted to this
+   // PacketReceiver. The PacketReceiver pointer is valid as long as the
+   // Call instance exists.
+diff --git a/webrtc/call/call.cc b/webrtc/call/call.cc
+index f7c66db..a3f18dc 100644
+--- a/webrtc/call/call.cc
++++ b/webrtc/call/call.cc
+@@ -61,6 +61,8 @@ class Call : public webrtc::Call,
+ 
+   PacketReceiver* Receiver() override;
+ 
++  #ifdef HAVE_NOT
++
+   webrtc::AudioSendStream* CreateAudioSendStream(
+       const webrtc::AudioSendStream::Config& config) override;
+   void DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) override;
+@@ -80,6 +82,8 @@ class Call : public webrtc::Call,
+   void DestroyVideoReceiveStream(
+       webrtc::VideoReceiveStream* receive_stream) override;
+ 
++  #endif  // HAVE_NOT
++
+   Stats GetStats() const override;
+ 
+   DeliveryStatus DeliverPacket(MediaType media_type,
+@@ -112,11 +116,13 @@ class Call : public webrtc::Call,
+       EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
+ 
+   VoiceEngine* voice_engine() {
++    #ifdef HAVE_NOT
+     internal::AudioState* audio_state =
+         static_cast<internal::AudioState*>(config_.audio_state.get());
+     if (audio_state)
+       return audio_state->voice_engine();
+     else
++    #endif  // HAVE_NOT
+       return nullptr;
+   }
+ 
+@@ -223,11 +229,16 @@ Call::Call(const Call::Config& config)
+     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
+                   config.bitrate_config.start_bitrate_bps);
+   }
++
++  #ifdef HAVE_NOT
++
+   if (config.audio_state.get()) {
+     ScopedVoEInterface<VoECodec> voe_codec(voice_engine());
+     event_log_ = voe_codec->GetEventLog();
+   }
+ 
++  #endif  // HAVE_NOT
++
+   Trace::CreateTrace();
+   call_stats_->RegisterStatsObserver(congestion_controller_.get());
+ 
+@@ -323,6 +334,8 @@ PacketReceiver* Call::Receiver() {
+   return this;
+ }
+ 
++#ifdef HAVE_NOT
++
+ webrtc::AudioSendStream* Call::CreateAudioSendStream(
+     const webrtc::AudioSendStream::Config& config) {
+   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
+@@ -522,6 +535,8 @@ void Call::DestroyVideoReceiveStream(
+   delete receive_stream_impl;
+ }
+ 
++#endif  // HAVE_NOT
++
+ Call::Stats Call::GetStats() const {
+   // TODO(solenberg): Some test cases in EndToEndTest use this from a different
+   // thread. Re-enable once that is fixed.
+@@ -581,6 +596,9 @@ void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
+   }
+ 
+   UpdateAggregateNetworkState();
++
++  #ifdef HAVE_NOT
++
+   {
+     ReadLockScoped read_lock(*send_crit_);
+     for (auto& kv : audio_send_ssrcs_) {
+@@ -599,6 +617,9 @@ void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
+       kv.second->SignalNetworkState(video_network_state_);
+     }
+   }
++
++  #endif  // HAVE_NOT
++
+ }
+ 
+ // TODO(honghaiz): Add tests for this method.
+@@ -684,8 +705,10 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
+     if (video_send_streams_.empty())
+       return;
+ 
++    #ifdef HAVE_NOT
+     for (VideoSendStream* stream : video_send_streams_)
+       pad_up_to_bitrate_bps += stream->GetPaddingNeededBps();
++    #endif  // HAVE_NOT
+   }
+   // Allocated bitrate might be higher than bitrate estimate if enforcing min
+   // bitrate, or lower if estimate is higher than the sum of max bitrates, so
+@@ -709,6 +732,8 @@ void Call::ConfigureSync(const std::string& sync_group) {
+   if (voice_engine() == nullptr || sync_group.empty())
+     return;
+ 
++  #ifdef HAVE_NOT
++
+   AudioReceiveStream* sync_audio_stream = nullptr;
+   // Find existing audio stream.
+   const auto it = sync_stream_mapping_.find(sync_group);
+@@ -750,6 +775,9 @@ void Call::ConfigureSync(const std::string& sync_group) {
+       video_stream->SetSyncChannel(voice_engine(), -1);
+     }
+   }
++
++  #endif  // HAVE_NOT
++
+ }
+ 
+ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
+@@ -761,6 +789,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
+   //             there's no receiver of the packet.
+   received_rtcp_bytes_ += length;
+   bool rtcp_delivered = false;
++
++  #ifdef HAVE_NOT
++
+   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
+     ReadLockScoped read_lock(*receive_crit_);
+     for (VideoReceiveStream* stream : video_receive_streams_) {
+@@ -790,6 +821,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
+     }
+   }
+ 
++  #endif  // HAVE_NOT
++
+   if (event_log_ && rtcp_delivered)
+     event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet, length);
+ 
+@@ -809,8 +842,11 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
+   if (first_rtp_packet_received_ms_ == -1)
+     first_rtp_packet_received_ms_ = last_rtp_packet_received_ms_;
+ 
++  #ifdef HAVE_NOT
++
+   uint32_t ssrc = ByteReader<uint32_t>::ReadBigEndian(&packet[8]);
+   ReadLockScoped read_lock(*receive_crit_);
++
+   if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
+     auto it = audio_receive_ssrcs_.find(ssrc);
+     if (it != audio_receive_ssrcs_.end()) {
+@@ -835,6 +871,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
+       return status;
+     }
+   }
++
++  #endif  // HAVE_NOT
++
+   return DELIVERY_UNKNOWN_SSRC;
+ }
+ 
+diff --git a/webrtc/call/webrtc_call.gypi b/webrtc/call/webrtc_call.gypi
+index 455a11a..351f1b5 100644
+--- a/webrtc/call/webrtc_call.gypi
++++ b/webrtc/call/webrtc_call.gypi
+@@ -15,10 +15,10 @@
+       '<(webrtc_root)/webrtc.gyp:rtc_event_log',
+     ],
+     'webrtc_call_sources': [
+-      'call/bitrate_allocator.cc',
+-      'call/call.cc',
+-      'call/transport_adapter.cc',
+-      'call/transport_adapter.h',
++      '<(webrtc_root)/call/bitrate_allocator.cc',
++      '<(webrtc_root)/call/call.cc',
++      '<(webrtc_root)/call/transport_adapter.cc',
++      '<(webrtc_root)/call/transport_adapter.h',
+     ],
+   },
+ }
+diff --git a/webrtc/media/media.gyp b/webrtc/media/media.gyp
+index deb730a..60bb7e4 100644
+--- a/webrtc/media/media.gyp
++++ b/webrtc/media/media.gyp
+@@ -7,9 +7,80 @@
+ # be found in the AUTHORS file in the root of the source tree.
+ 
+ {
+-  'includes': [ '../build/common.gypi', ],
++  'includes': [
++    '../build/common.gypi',
++    '../call/webrtc_call.gypi',
++  ],
+   'targets': [
+     {
++      'target_name': 'rtc_media_not',
++      'type': 'static_library',
++      'dependencies': [
++        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:metrics_default',
++        '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
++        '<(webrtc_root)/p2p/p2p.gyp:rtc_p2p',
++        '<@(webrtc_call_dependencies)',
++      ],
++      'sources': [
++        '<(webrtc_root)/call.h',
++        '<@(webrtc_call_sources)',
++        '<(webrtc_root)/video/call_stats.cc',
++        '<(webrtc_root)/video/call_stats.h',
++        '<(webrtc_root)/video/send_delay_stats.cc',
++        '<(webrtc_root)/video/send_delay_stats.h',
++        '<(webrtc_root)/video/vie_remb.cc',
++        '<(webrtc_root)/video/vie_remb.h',
++        '<(webrtc_root)/modules/utility/include/process_thread.h',
++        '<(webrtc_root)/modules/utility/source/process_thread_impl.cc',
++        '<(webrtc_root)/modules/utility/source/process_thread_impl.h',
++        'base/codec.cc',
++        'base/codec.h',
++        'base/mediachannel.h',
++        'base/mediaconstants.cc',
++        'base/mediaconstants.h',
++        'base/mediaengine.cc',
++        'base/mediaengine.h',
++        'base/rtpdataengine.cc',
++        'base/rtpdataengine.h',
++        'base/rtputils.cc',
++        'base/rtputils.h',
++        'base/streamparams.cc',
++        'base/streamparams.h',
++        'base/turnutils.cc',
++        'base/turnutils.h',
++        'sctp/sctpdataengine.cc',
++        'sctp/sctpdataengine.h',
++      ],
++      # TODO(kjellander): Make the code compile without disabling these flags.
++      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3307
++      'cflags': [
++        '-Wno-deprecated-declarations',
++      ],
++      'cflags!': [
++        '-Wextra',
++      ],
++      'cflags_cc!': [
++        '-Woverloaded-virtual',
++      ],
++      'msvs_disabled_warnings': [
++        4245,  # conversion from 'int' to 'size_t', signed/unsigned mismatch.
++        4267,  # conversion from 'size_t' to 'int', possible loss of data.
++        4389,  # signed/unsigned mismatch.
++      ],
++      'conditions': [
++        ['build_usrsctp==1', {
++          'include_dirs': [
++            # TODO(jiayl): move this into the direct_dependent_settings of
++            # usrsctp.gyp.
++            '<(DEPTH)/third_party/usrsctp/usrsctplib',
++          ],
++          'dependencies': [
++            '<(DEPTH)/third_party/usrsctp/usrsctp.gyp:usrsctplib',
++          ],
++        }],
++      ],
++    },  # target rtc_media_not
++    {
+       'target_name': 'rtc_media',
+       'type': 'static_library',
+       'dependencies': [
+diff --git a/webrtc/pc/channelmanager.cc b/webrtc/pc/channelmanager.cc
+index 56dd135..06f3892 100644
+--- a/webrtc/pc/channelmanager.cc
++++ b/webrtc/pc/channelmanager.cc
+@@ -153,6 +153,8 @@ bool ChannelManager::Init() {
+         rtc::Bind(&rtc::Thread::SetAllowBlockingCalls, network_thread_, false));
+   }
+ 
++  #ifdef HAVE_NOT
++
+   initialized_ = worker_thread_->Invoke<bool>(
+       Bind(&ChannelManager::InitMediaEngine_w, this));
+   ASSERT(initialized_);
+@@ -168,6 +170,10 @@ bool ChannelManager::Init() {
+                     << audio_output_volume_;
+   }
+ 
++  #else
++  initialized_ = true;
++  #endif  // HAVE_NOT
++
+   return initialized_;
+ }
+ 
+diff --git a/webrtc/pc/mediasession.cc b/webrtc/pc/mediasession.cc
+index 0fa20d8..f57471a 100644
+--- a/webrtc/pc/mediasession.cc
++++ b/webrtc/pc/mediasession.cc
+@@ -1234,11 +1234,13 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
+     : secure_(SEC_DISABLED),
+       add_legacy_(true),
+       transport_desc_factory_(transport_desc_factory) {
++  #ifdef HAVE_NOT
+   channel_manager->GetSupportedAudioCodecs(&audio_codecs_);
+   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
+   channel_manager->GetSupportedVideoCodecs(&video_codecs_);
+   channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);
+   channel_manager->GetSupportedDataCodecs(&data_codecs_);
++  #endif  // HAVE_NOT
+ }
+ 
+ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
+diff --git a/webrtc/pc/pc.gyp b/webrtc/pc/pc.gyp
+index 25ebc5d..59330c1 100755
+--- a/webrtc/pc/pc.gyp
++++ b/webrtc/pc/pc.gyp
+@@ -21,7 +21,7 @@
+       'type': 'static_library',
+       'dependencies': [
+         '<(webrtc_root)/base/base.gyp:rtc_base',
+-        '<(webrtc_root)/media/media.gyp:rtc_media',
++        # '<(webrtc_root)/media/media.gyp:rtc_media',
+       ],
+       'conditions': [
+         ['build_libsrtp==1', {
+diff --git a/webrtc/webrtc.gyp b/webrtc/webrtc.gyp
+index 793bf96..51fe339 100644
+--- a/webrtc/webrtc.gyp
++++ b/webrtc/webrtc.gyp
+@@ -35,7 +35,7 @@
+         ],
+       },
+     }],
+-    ['build_with_chromium==0 and'
++    ['build_with_chromium==0 and build_have_not==1 and'
+      '(OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7"))', {
+       # TODO(kjellander): Move this to webrtc_all_dependencies once all of talk/
+       # has been moved to webrtc/. It can't be processed by Chromium since the
+-- 
+2.9.2
+

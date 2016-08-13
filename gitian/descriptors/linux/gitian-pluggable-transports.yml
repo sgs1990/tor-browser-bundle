@@ -73,6 +73,7 @@ files:
 - "gcc-linux32-utils.zip"
 - "gcc-linux64-utils.zip"
 - "webrtc"
+- "0001-With-a-rat-fur.patch"
 script: |
   INSTDIR="$HOME/install"
   PTDIR="$INSTDIR/Tor/PluggableTransports"
@@ -326,6 +327,7 @@ script: |
 
   # Building webrtc
   cd webrtc/src
+  git am ~/build/0001-With-a-rat-fur.patch
   export GYP_CROSSCOMPILE=1
   export GYP_DEFINES="OS=linux target_arch=$(if [ $GBUILD_BITS = 32 ]; then echo ia32; else echo x64; fi)"
   # Do not use bundled utilities.
@@ -340,13 +342,8 @@ script: |
   # https://bugs.chromium.org/p/chromium/issues/detail?id=318413.
   GYP_DEFINES+=" embedded=1"
   GYP_DEFINES+=" werror="
-  JAVA_HOME=/usr/lib/jvm/default-java webrtc/build/gyp_webrtc.py
+  JAVA_HOME=/usr/lib/jvm/default-java webrtc/build/gyp_webrtc.py webrtc/api/api.gyp
   ninja -C out/Release
-  # Run ninja once more, without include_tests=0, in order to build just the
-  # FakeAudioCaptureModule that go-webrtc uses.
-  GYP_DEFINES="$(echo "$GYP_DEFINES" | sed -e 's/include_tests=0//g')"
-  JAVA_HOME=/usr/lib/jvm/default-java webrtc/build/gyp_webrtc.py
-  ninja -C out/Release peerconnection_unittests.isolated
   # https://github.com/keroserene/go-webrtc/issues/23#issuecomment-175312648
   # dump_syms_regtest.o is actually an executable, not an object file. If not
   # excluded, it results in the error:
